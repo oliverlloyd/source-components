@@ -1,0 +1,80 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: source.gutools.co.uk
+Parameters:
+    Domain:
+        Description: gutools.co.uk sub-domain to serve
+        Type: String
+    ACMCertArn:
+        Description: ACM certificate ARN for CloudFront
+        Type: String
+Resources:
+    StaticContentBucket:
+        Type: AWS::S3::Bucket
+        DeletionPolicy: "Retain"
+        Properties:
+            BucketName: "source-design-system"
+            AccessControl: Private
+            WebsiteConfiguration:
+                IndexDocument: "index.html"
+            CorsConfiguration:
+                CorsRules:
+                    - AllowedMethods:
+                          - GET
+                      AllowedOrigins:
+                          - "*"
+                      AllowedHeaders:
+                          - "*"
+    StaticContentBucketPolicy:
+        Type: AWS::S3::BucketPolicy
+        Properties:
+            Bucket:
+                Ref: StaticContentBucket
+            PolicyDocument:
+                Id: SourceDesignSystemBucketPolicy
+                Statement:
+                    - Action: ["s3:GetObject"]
+                      Effect: Allow
+                      Principal: "*"
+                      Resource:
+                          Fn::Join:
+                              [
+                                  "",
+                                  [
+                                      "arn:aws:s3:::",
+                                      { Ref: StaticContentBucket },
+                                      "/*",
+                                  ],
+                              ]
+    CFDistribution:
+        Type: AWS::CloudFront::Distribution
+        Properties:
+            DistributionConfig:
+                Aliases:
+                    - !Ref "Domain"
+                DefaultCacheBehavior:
+                    AllowedMethods:
+                        - DELETE
+                        - GET
+                        - HEAD
+                        - OPTIONS
+                        - PATCH
+                        - POST
+                        - PUT
+                    TargetOriginId: "source-design-system"
+                    ForwardedValues:
+                        QueryString: "false"
+                        Cookies:
+                            Forward: none
+                    ViewerProtocolPolicy: https-only
+                Enabled: "true"
+                Origins:
+                    - DomainName: !Sub "${StaticContentBucket}.s3-website-eu-west-1.amazonaws.com"
+                      Id: "source-design-system"
+                      CustomOriginConfig:
+                          HTTPPort: "80"
+                          HTTPSPort: "443"
+                          OriginProtocolPolicy: http-only
+                ViewerCertificate:
+                    AcmCertificateArn: !Ref "ACMCertArn"
+                    MinimumProtocolVersion: TLSv1
+                    SslSupportMethod: sni-only
