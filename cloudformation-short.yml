@@ -1,0 +1,40 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: source.gutools.co.uk
+Resources:
+    StaticContentBucket:
+        Type: AWS::S3::Bucket
+        DeletionPolicy: "Retain"
+        Properties:
+            BucketName: "source-design-system"
+            AccessControl: Private
+            WebsiteConfiguration:
+                IndexDocument: "index.html"
+            CorsConfiguration:
+                CorsRules:
+                    - AllowedMethods:
+                          - GET
+                      AllowedOrigins:
+                          - "*"
+                      AllowedHeaders:
+                          - "*"
+    StaticContentBucketPolicy:
+        Type: AWS::S3::BucketPolicy
+        Properties:
+            Bucket:
+                Ref: StaticContentBucket
+            PolicyDocument:
+                Id: SourceDesignSystemBucketPolicy
+                Statement:
+                    - Action: ["s3:GetObject"]
+                      Effect: Allow
+                      Principal: "*"
+                      Resource:
+                          Fn::Join:
+                              [
+                                  "",
+                                  [
+                                      "arn:aws:s3:::",
+                                      { Ref: StaticContentBucket },
+                                      "/*",
+                                  ],
+                              ]
