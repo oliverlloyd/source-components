@@ -3,7 +3,7 @@ on:
     push:
         branches:
             - "*"
-            - "^master"
+            - "^sa-test"
             - "^gh-pages"
 jobs:
     build:
